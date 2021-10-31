@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -23,16 +24,7 @@ public class ContactService implements ContactServiceInterface{
 	public ContactService(ContactRepository repo) {
 		this.repo = repo;
 	}
-
-	@Override
-	public List<Contact> FindAll(int PageNumber) {
-		Pageable pagination = PageRequest.of(((PageNumber-1)*10)+1, PageNumber*10, Sort.by("vezeteknev").ascending());
-		
-		List<Contact> contacts = repo.findAll(pagination);
-		
-		return contacts;
-	}
-
+	
 	@Override
 	public Contact FindById(Long id) {
 		Optional<Contact> contact = repo.findById(id);
@@ -62,6 +54,21 @@ public class ContactService implements ContactServiceInterface{
 			return true;
 		}
 		
+		return false;
+	}
+
+	@Override
+	public List<Contact> findByStatusz(String statusz, int page, int size) {
+		List<Contact> contacts = repo.findByStatusz(statusz, page, size);
+		
+		return contacts;
+	}
+
+	@Override
+	public boolean existsByEmail(String email) {
+		if(repo.existsByEmail(email)) {
+			return true;
+		}
 		return false;
 	}
 	

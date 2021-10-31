@@ -1,14 +1,15 @@
 package hu.futureofmedia.task.contactsapi.controllers;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.ResponseEntity.BodyBuilder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import hu.futureofmedia.task.contactsapi.entities.Company;
 import hu.futureofmedia.task.contactsapi.entities.Contact;
@@ -30,7 +32,7 @@ public class ApiController
 	
 	private ContactService contactService;
 	private CompanyService companyService;
-	private final int ERROR_STATUS_CODE = 420;
+	private final HttpStatus ERROR_STATUS_CODE = HttpStatus.BAD_REQUEST;
 	
 	@Autowired
 	public void setServices(ContactService contactService, CompanyService companyService) 
@@ -39,10 +41,28 @@ public class ApiController
 		this.companyService = companyService;
 	}
 	
-	@GetMapping("/contact/list/{page}")
-	public @ResponseBody ResponseEntity<List<Contact>> ListContacts(@PathVariable(value="page") int page)
+	@GetMapping("/contact/list")
+	public @ResponseBody ResponseEntity<Map<String, Object>> ListContacts(@RequestParam(name="page") int page)
 	{
-		return ResponseEntity.ok(contactService.FindAll(page));
+		List<Contact> contacts = contactService.findByStatusz(StatuszType.AKTIV.toString(), (page-1)*10, 10);
+		List<Map<String, String>> valogatottContacts = new ArrayList<>();
+		Map<String, String> currentContact;
+		
+		for(Contact contact : contacts) {
+			currentContact = new HashMap<>();
+			currentContact.put("id", contact.getId().toString());
+			currentContact.put("teljes_nev", contact.getVezeteknev()+" "+contact.getKeresztnev());
+			currentContact.put("ceg_neve", contact.getCeg().getName());
+			currentContact.put("email", contact.getEmail());
+			currentContact.put("telefonszam", contact.getTelefonszam());
+			valogatottContacts.add(currentContact);
+		}
+		
+		Map<String, Object> pages = new HashMap<>();
+		pages.put("currentPage", page);
+		pages.put("conctacts", valogatottContacts);
+		
+		return new ResponseEntity<>(pages, HttpStatus.OK);
 	}
 	
 	@GetMapping("/contact/{id}")
@@ -52,24 +72,24 @@ public class ApiController
 	}
 	
 	@GetMapping("/contact/delete/{id}")
-	public @ResponseBody BodyBuilder DeleteContact(@PathVariable(value="id") Long id)
+	public void DeleteContact(@PathVariable(value="id") Long id)
 	{		
 		if(contactService.Delete(id)) 
 		{
-			return ResponseEntity.status(HttpStatus.ACCEPTED);
+			throw new ResponseStatusException(HttpStatus.OK, "Sikeres törlés");
 		}
 		
-		return ResponseEntity.status(ERROR_STATUS_CODE);
+		throw new ResponseStatusException(ERROR_STATUS_CODE, "Sikertelen törlés");
 	}
 	
 	@GetMapping("/companies")
-	public ResponseEntity<List<Company>> Companies()
+	public @ResponseBody ResponseEntity<List<Company>> Companies()
 	{
 		return ResponseEntity.ok(companyService.FindAll());
 	}
 	
 	@PostMapping("/contact/new")
-	public @ResponseBody BodyBuilder CreateContact(@RequestParam Map<String, String> Datas)
+	public void CreateContact(@RequestParam Map<String, String> Datas)
 	{
 		int db = 0;
 		
@@ -83,48 +103,57 @@ public class ApiController
 				}	
 			}
 		}
-		
-		if(db == 0 || Datas != null || Datas.size() != 0) 
+
+		if(db == 0 && Datas != null && Datas.size() != 0) 
 		{
 			Contact contact = new Contact
 			(
 					Datas.get("vezeteknev"), 
 					Datas.get("keresztnev"), 
 					Datas.get("email"), 
-					Datas.get("telefonszam"), 
+					null, 
 					null,
 					Datas.get("megjegyzes"), 
 					StatuszType.AKTIV
 			);
-			
 			Company company = companyService.FindById(Long.parseLong(Datas.get("company")));
-			System.out.println(contact.EmailValidation());
-			System.out.println(contact.TelefonszamValidation());
+			
+			
 			if(!contact.EmailValidation() 
-					|| !contact.TelefonszamValidation() 
-					|| company == null
+					|| Datas.get("telefonszam").isEmpty() ? false : !contact.TelefonszamValidation()
 			) 
 			{
-				return ResponseEntity.status(ERROR_STATUS_CODE);
+				throw new ResponseStatusException(ERROR_STATUS_CODE, "Az e-mail cím vagy a telefonszám formátuma hibás");
+			}
+			
+			if(contactService.existsByEmail(contact.getEmail())) 
+			{
+				throw new ResponseStatusException(ERROR_STATUS_CODE, "Ez a kapcsolattartó már létezik");
+			}
+			
+			if(company == null) 
+			{
+				throw new ResponseStatusException(ERROR_STATUS_CODE, "Csak valós cég adható meg");
 			}
 			
 			contact.setCeg(company);
 			contact.setCreated_at(new Timestamp(new Date().getTime()));
+			contact.setTelefonszam(Datas.get("telefonszam"));
 			
 			if(contactService.Save(contact)) {
-				return ResponseEntity.status(HttpStatus.ACCEPTED);
+				throw new ResponseStatusException(HttpStatus.OK, "Sikeres feltöltés");
 			}
 			
-			return ResponseEntity.status(ERROR_STATUS_CODE);
+			throw new ResponseStatusException(ERROR_STATUS_CODE, "Sikertelen feltöltés");
 		
 		}
 		
-		return ResponseEntity.status(ERROR_STATUS_CODE);
+		throw new ResponseStatusException(ERROR_STATUS_CODE, "Az adatok megadása kötelező");
 		
 	}
 	
 	@PostMapping("/contact/update")
-	public @ResponseBody BodyBuilder UpdateContact(@RequestParam Map<String, String> Datas)
+	public void UpdateContact(@RequestParam Map<String, String> Datas)
 	{
 		int db = 0;
 		
@@ -139,7 +168,7 @@ public class ApiController
 			}
 		}
 		
-		if(db == 0 || Datas != null || Datas.size() != 0) 
+		if(db == 0 && Datas != null && Datas.size() != 0) 
 		{
 			Contact contact = new Contact
 			(
@@ -155,25 +184,25 @@ public class ApiController
 			Company company = companyService.FindById(Long.parseLong(Datas.get("company")));
 			
 			if(!contact.EmailValidation() 
-					|| !contact.TelefonszamValidation() 
+					|| Datas.get("telefonszam").isEmpty() ? false : !contact.TelefonszamValidation()
 					|| company == null
 			) 
 			{
-				return ResponseEntity.status(ERROR_STATUS_CODE);
+				throw new ResponseStatusException(ERROR_STATUS_CODE, "Az e-mail cím vagy a telefonszám formátuma hibás");
 			}
 			
 			contact.setCeg(company);
 			contact.setUpdated_at(new Timestamp(new Date().getTime()));
 			
 			if(contactService.Save(contact)) {
-				return ResponseEntity.status(HttpStatus.ACCEPTED);
+				throw new ResponseStatusException(HttpStatus.OK, "Sikeres feltöltés");
 			}
 			
-			return ResponseEntity.status(ERROR_STATUS_CODE);
+			throw new ResponseStatusException(ERROR_STATUS_CODE, "Sikertelen feltöltés");
 		
 		}
 		
-		return ResponseEntity.status(ERROR_STATUS_CODE);
+		throw new ResponseStatusException(ERROR_STATUS_CODE, "Az adatok megadása kötelező");
 		
 	}
 	

@@ -7,6 +7,8 @@ import java.util.regex.Pattern;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -16,9 +18,8 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import com.google.i18n.phonenumbers.NumberParseException;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.google.i18n.phonenumbers.PhoneNumberUtil;
-import com.google.i18n.phonenumbers.Phonenumber.PhoneNumber;
 
 import hu.futureofmedia.task.contactsapi.others.StatuszType;
 
@@ -35,16 +36,21 @@ public class Contact {
 	@Column(nullable=false)
 	private String keresztnev;
 	
-	@Column(unique=true)
+	@Column(unique=true, nullable=false)
 	private String email;
 	
-	@Column(unique=true)
+	@Column(nullable=true)
 	private String telefonszam;
 	
 	@ManyToOne(cascade = CascadeType.ALL , fetch = FetchType.EAGER)
 	private Company ceg;
 	
+	@Column(nullable=false)
 	private String megjegyzes;
+	
+	@JsonBackReference
+	@Enumerated(EnumType.STRING)
+	@Column( nullable=false)
 	private StatuszType statusz = StatuszType.AKTIV;
 	
 	@Temporal(TemporalType.TIMESTAMP)
