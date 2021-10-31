@@ -1,6 +1,8 @@
 package hu.futureofmedia.task.contactsapi.entities;
 
 import java.util.Date;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -14,7 +16,11 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import org.json.JSONObject;
+import com.google.i18n.phonenumbers.NumberParseException;
+import com.google.i18n.phonenumbers.PhoneNumberUtil;
+import com.google.i18n.phonenumbers.Phonenumber.PhoneNumber;
+
+import hu.futureofmedia.task.contactsapi.others.StatuszType;
 
 @Entity
 @Table(name="contacts")
@@ -39,14 +45,14 @@ public class Contact {
 	private Company ceg;
 	
 	private String megjegyzes;
-	private Enum statusz;
+	private StatuszType statusz = StatuszType.AKTIV;
 	
 	@Temporal(TemporalType.TIMESTAMP)
-	@Column( nullable=false, columnDefinition="Timestamp default CURRENT_TIMESTAMP")
+	@Column( nullable=false)
 	private Date created_at;
 	
 	@Temporal(TemporalType.TIMESTAMP)
-	@Column( nullable=true, columnDefinition="Timestamp default CURRENT_TIMESTAMP" )
+	@Column( nullable=true)
 	private Date updated_at;
 	
 	public Contact() {}
@@ -58,7 +64,7 @@ public class Contact {
 			String telefonszam, 
 			Company ceg,
 			String megjegyzes, 
-			Enum statusz) 
+			StatuszType statusz) 
 	{
 		this.vezeteknev = vezeteknev;
 		this.keresztnev = keresztnev;
@@ -67,6 +73,14 @@ public class Contact {
 		this.ceg = ceg;
 		this.megjegyzes = megjegyzes;
 		this.statusz = statusz;
+	}
+	
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
 	}
 
 	public String getVezeteknev() {
@@ -117,40 +131,40 @@ public class Contact {
 		this.megjegyzes = megjegyzes;
 	}
 
-	public Enum getStatusz() {
+	public StatuszType getStatusz() {
 		return statusz;
 	}
 
-	public void setStatusz(Enum statusz) {
+	public void setStatusz(StatuszType statusz) {
 		this.statusz = statusz;
 	}
 	
-	public JSONObject toHalfJSON() {
-		JSONObject json = new JSONObject();
-		
-		json.put("id", id);
-		json.put("tejes_nev", vezeteknev+" "+keresztnev);
-		json.put("email", email);
-		json.put("telefonszam", telefonszam);
-		json.put("ceg_neve", ceg.getName());
-		
-		return json;
+	public Date getCreated_at() {
+		return created_at;
+	}
+
+	public void setCreated_at(Date created_at) {
+		this.created_at = created_at;
+	}
+
+	public Date getUpdated_at() {
+		return updated_at;
+	}
+
+	public void setUpdated_at(Date updated_at) {
+		this.updated_at = updated_at;
 	}
 	
-	public JSONObject toFullJSON() {
-		JSONObject json = new JSONObject();
+	public boolean EmailValidation() {
+		Pattern ValidEmailRegex = Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", Pattern.CASE_INSENSITIVE);
+		Matcher matcher = ValidEmailRegex.matcher(email);
 		
-		json.put("id", id);
-		json.put("vezeteknev", vezeteknev);
-		json.put("keresztnev", keresztnev);
-		json.put("email", email);
-		json.put("telefonszam", telefonszam);
-		json.put("ceg_neve", ceg.getName());
-		json.put("megjegyzes", megjegyzes);
-		json.put("created_at", created_at);
-		json.put("updated_at", updated_at);
-		
-		return json;
+		return matcher.find();
+	}
+	
+	public boolean TelefonszamValidation() {
+		PhoneNumberUtil util = PhoneNumberUtil.getInstance();
+		return util.isPossibleNumber(telefonszam, "E-164");
 	}
 
 	@Override

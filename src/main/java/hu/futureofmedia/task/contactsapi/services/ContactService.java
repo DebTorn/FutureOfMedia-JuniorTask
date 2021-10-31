@@ -1,9 +1,8 @@
 package hu.futureofmedia.task.contactsapi.services;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -11,6 +10,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import hu.futureofmedia.task.contactsapi.entities.Contact;
+import hu.futureofmedia.task.contactsapi.others.StatuszType;
 import hu.futureofmedia.task.contactsapi.repositories.ContactRepository;
 import hu.futureofmedia.task.contactsapi.services.interfaces.ContactServiceInterface;
 
@@ -25,27 +25,44 @@ public class ContactService implements ContactServiceInterface{
 	}
 
 	@Override
-	public List<JSONObject> FindAll(int PageNumber) {
-		Pageable pagination = PageRequest.of(PageNumber, PageNumber+10, Sort.by("vezeteknev").ascending());
+	public List<Contact> FindAll(int PageNumber) {
+		Pageable pagination = PageRequest.of(((PageNumber-1)*10)+1, PageNumber*10, Sort.by("vezeteknev").ascending());
 		
 		List<Contact> contacts = repo.findAll(pagination);
-		List<JSONObject> jsonContacts = new ArrayList<>();
 		
-		for(Contact contact : contacts) {
-			jsonContacts.add(contact.toHalfJSON());
-		}
-		
-		return jsonContacts;
+		return contacts;
 	}
 
 	@Override
 	public Contact FindById(Long id) {
-		return repo.findById(id);
+		Optional<Contact> contact = repo.findById(id);
+		if(contact.isPresent()) {
+			return repo.findById(id).get();
+		}
+		return null;
 	}
 
 	@Override
 	public boolean Delete(Long id) {
-		return repo.deleteById(id);
+		Optional<Contact> contact = repo.findById(id);
+		
+		if(contact.isPresent()) {
+			contact.get().setStatusz(StatuszType.TOROLT);
+			if(repo.save(contact.get()) != null) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
+
+	@Override
+	public boolean Save(Contact contact) {
+		if(repo.save(contact) != null) {
+			return true;
+		}
+		
+		return false;
 	}
 	
 }

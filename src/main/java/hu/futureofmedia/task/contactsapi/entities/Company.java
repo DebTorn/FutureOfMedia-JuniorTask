@@ -11,8 +11,6 @@ import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
-import org.json.JSONObject;
-
 @Entity
 @Table(name="company")
 public class Company {
@@ -31,14 +29,6 @@ public class Company {
 
     public String getName() {
         return name;
-    }
-    
-    public JSONObject toJSON() {
-    	JSONObject json = new JSONObject();
-    	json.put("id", id);
-    	json.put("name", name);
-    	
-    	return json;
     }
 
 	@Override
