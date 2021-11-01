@@ -13,4 +13,5 @@ public interface ContactRepository extends CrudRepository<Contact, Long>{
 	List<Contact> findByStatusz(@Param("statusz") String statusz,@Param("page") int page, @Param("size") int size);
 	
 	boolean existsByEmail(String email);
+	boolean existsByTelefonszam(String telefonszam);
 }

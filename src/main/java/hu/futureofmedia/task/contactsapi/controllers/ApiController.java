@@ -111,7 +111,7 @@ public class ApiController
 					Datas.get("vezeteknev"), 
 					Datas.get("keresztnev"), 
 					Datas.get("email"), 
-					null, 
+					Datas.get("telefonszam"), 
 					null,
 					Datas.get("megjegyzes"), 
 					StatuszType.AKTIV
@@ -119,8 +119,9 @@ public class ApiController
 			Company company = companyService.FindById(Long.parseLong(Datas.get("company")));
 			
 			
+			
 			if(!contact.EmailValidation() 
-					|| Datas.get("telefonszam").isEmpty() ? false : !contact.TelefonszamValidation()
+					|| contact.getTelefonszam().isEmpty() ? false : !contact.TelefonszamValidation()
 			) 
 			{
 				throw new ResponseStatusException(ERROR_STATUS_CODE, "Az e-mail cím vagy a telefonszám formátuma hibás");
@@ -128,7 +129,13 @@ public class ApiController
 			
 			if(contactService.existsByEmail(contact.getEmail())) 
 			{
-				throw new ResponseStatusException(ERROR_STATUS_CODE, "Ez a kapcsolattartó már létezik");
+				throw new ResponseStatusException(ERROR_STATUS_CODE, "Ezzel az e-mail címmel már szerepel kapcsolattartó az adatbázisban");
+			}
+			
+			if(!contact.getTelefonszam().isEmpty()
+				&& contactService.existsByTelefonszam(contact.getTelefonszam())) 
+			{
+				throw new ResponseStatusException(ERROR_STATUS_CODE, "Ezzel a telefonszámmal már szerepel kapcsolattartó az adatbázisban");
 			}
 			
 			if(company == null) 
@@ -138,7 +145,6 @@ public class ApiController
 			
 			contact.setCeg(company);
 			contact.setCreated_at(new Timestamp(new Date().getTime()));
-			contact.setTelefonszam(Datas.get("telefonszam"));
 			
 			if(contactService.Save(contact)) {
 				throw new ResponseStatusException(HttpStatus.OK, "Sikeres feltöltés");
@@ -170,25 +176,39 @@ public class ApiController
 		
 		if(db == 0 && Datas != null && Datas.size() != 0) 
 		{
-			Contact contact = new Contact
-			(
-					Datas.get("vezeteknev"), 
-					Datas.get("keresztnev"), 
-					Datas.get("email"), 
-					Datas.get("telefonszam"), 
-					null,
-					Datas.get("megjegyzes"), 
-					StatuszType.AKTIV
-			);
+			
+			Contact contact = contactService.FindById(Long.parseLong(Datas.get("id")));
+			contact.setVezeteknev(Datas.get("vezeteknev"));
+			contact.setKeresztnev(Datas.get("keresztnev"));
+			contact.setMegjegyzes(Datas.get("megjegyzes"));
 			
 			Company company = companyService.FindById(Long.parseLong(Datas.get("company")));
 			
 			if(!contact.EmailValidation() 
-					|| Datas.get("telefonszam").isEmpty() ? false : !contact.TelefonszamValidation()
-					|| company == null
+					|| contact.getTelefonszam().isEmpty() ? false : !contact.TelefonszamValidation()
 			) 
 			{
 				throw new ResponseStatusException(ERROR_STATUS_CODE, "Az e-mail cím vagy a telefonszám formátuma hibás");
+			}
+			//Contact indb = contactService.FindById(contact.getId());
+			
+			if(!contact.getEmail().equals(Datas.get("email")) && contactService.existsByEmail(Datas.get("email"))) 
+			{
+				throw new ResponseStatusException(ERROR_STATUS_CODE, "Ezzel az e-mail címmel már szerepel kapcsolattartó az adatbázisban");
+			}
+			
+			contact.setEmail(Datas.get("email"));
+			
+			if(!Datas.get("telefonszam").isEmpty() && !contact.getTelefonszam().equals(Datas.get("telefonszam")) && contactService.existsByTelefonszam(Datas.get("telefonszam"))) 
+			{
+				throw new ResponseStatusException(ERROR_STATUS_CODE, "Ezzel a telefonszámmal már szerepel kapcsolattartó az adatbázisban");
+			}
+			
+			contact.setTelefonszam(Datas.get("telefonszam"));
+			
+			if(company == null) 
+			{
+				throw new ResponseStatusException(ERROR_STATUS_CODE, "Csak valós cég adható meg");
 			}
 			
 			contact.setCeg(company);

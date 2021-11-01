@@ -66,10 +66,12 @@ public class ContactService implements ContactServiceInterface{
 
 	@Override
 	public boolean existsByEmail(String email) {
-		if(repo.existsByEmail(email)) {
-			return true;
-		}
-		return false;
+		return repo.existsByEmail(email);
+	}
+	
+	@Override
+	public boolean existsByTelefonszam(String telefonszam) {
+		return repo.existsByTelefonszam(telefonszam);
 	}
 	
 }

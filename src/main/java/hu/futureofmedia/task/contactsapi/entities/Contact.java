@@ -36,7 +36,7 @@ public class Contact {
 	@Column(nullable=false)
 	private String keresztnev;
 	
-	@Column(unique=true, nullable=false)
+	@Column(nullable=false)
 	private String email;
 	
 	@Column(nullable=true)

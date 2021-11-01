@@ -10,4 +10,5 @@ public interface ContactServiceInterface {
 	public boolean Delete(Long id);
 	public boolean Save(Contact contact);
 	public boolean existsByEmail(String email);
+	public boolean existsByTelefonszam(String telefonszam);
 }
