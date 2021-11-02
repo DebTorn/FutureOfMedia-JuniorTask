@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -42,27 +43,11 @@ public class ApiController
 	}
 	
 	@GetMapping("/contact/list")
-	public @ResponseBody ResponseEntity<Map<String, Object>> ListContacts(@RequestParam(name="page") int page)
+	public @ResponseBody ResponseEntity<List<Contact>> ListContacts(@RequestParam(name="page") int page)
 	{
 		List<Contact> contacts = contactService.findByStatusz(StatuszType.AKTIV.toString(), (page-1)*10, 10);
-		List<Map<String, String>> valogatottContacts = new ArrayList<>();
-		Map<String, String> currentContact;
 		
-		for(Contact contact : contacts) {
-			currentContact = new HashMap<>();
-			currentContact.put("id", contact.getId().toString());
-			currentContact.put("teljes_nev", contact.getVezeteknev()+" "+contact.getKeresztnev());
-			currentContact.put("ceg_neve", contact.getCeg().getName());
-			currentContact.put("email", contact.getEmail());
-			currentContact.put("telefonszam", contact.getTelefonszam());
-			valogatottContacts.add(currentContact);
-		}
-		
-		Map<String, Object> pages = new HashMap<>();
-		pages.put("currentPage", page);
-		pages.put("conctacts", valogatottContacts);
-		
-		return new ResponseEntity<>(pages, HttpStatus.OK);
+		return new ResponseEntity<>(contacts, HttpStatus.OK);
 	}
 	
 	@GetMapping("/contact/{id}")
@@ -89,8 +74,9 @@ public class ApiController
 	}
 	
 	@PostMapping("/contact/new")
-	public void CreateContact(@RequestParam Map<String, String> Datas)
+	public void CreateContact(@RequestParam Map<String, String> Datas, @RequestBody String body)
 	{
+		System.out.println("req body: "+ body);
 		int db = 0;
 		
 		for(Map.Entry<String, String> data : Datas.entrySet()) 

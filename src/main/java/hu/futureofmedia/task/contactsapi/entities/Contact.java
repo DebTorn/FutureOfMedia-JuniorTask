@@ -175,9 +175,9 @@ public class Contact {
 
 	@Override
 	public String toString() {
-		return "Contact [vezeteknev=" + vezeteknev + ", keresztnev=" + keresztnev + ", email=" + email
-				+ ", telefonszam=" + telefonszam + ", ceg=" + ceg.toString() + ", megjegyzes=" + megjegyzes + ", statusz="
-				+ statusz + "]";
+		return "Contact [id=" + id + ", vezeteknev=" + vezeteknev + ", keresztnev=" + keresztnev + ", email=" + email
+				+ ", telefonszam=" + telefonszam + ", ceg=" + ceg + ", megjegyzes=" + megjegyzes + ", statusz="
+				+ statusz + ", created_at=" + created_at + ", updated_at=" + updated_at + "]";
 	}
 	
 }
