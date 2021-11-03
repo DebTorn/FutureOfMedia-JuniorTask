@@ -28,7 +28,7 @@ public class ContactService implements ContactServiceInterface{
 	@Override
 	public Contact FindById(Long id) {
 		Optional<Contact> contact = repo.findById(id);
-		if(contact.isPresent()) {
+		if(contact.isPresent() && contact.get().getStatusz() == StatuszType.AKTIV) {
 			return repo.findById(id).get();
 		}
 		return null;

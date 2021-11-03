@@ -76,7 +76,6 @@ public class ApiController
 	@PostMapping("/contact/new")
 	public void CreateContact(@RequestParam Map<String, String> Datas, @RequestBody String body)
 	{
-		System.out.println("req body: "+ body);
 		int db = 0;
 		
 		for(Map.Entry<String, String> data : Datas.entrySet()) 
